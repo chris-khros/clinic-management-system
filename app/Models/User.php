@@ -4,6 +4,8 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -21,6 +23,8 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role',
+        'is_active',
     ];
 
     /**
@@ -43,6 +47,55 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_active' => 'boolean',
         ];
+    }
+
+    /**
+     * Get the staff profile for the user.
+     */
+    public function staff(): HasOne
+    {
+        return $this->hasOne(Staff::class);
+    }
+
+    /**
+     * Get the doctor profile for the user.
+     */
+    public function doctor(): HasOne
+    {
+        return $this->hasOne(Doctor::class);
+    }
+
+    /**
+     * Get the announcements created by the user.
+     */
+    public function announcements(): HasMany
+    {
+        return $this->hasMany(Announcement::class, 'created_by');
+    }
+
+    /**
+     * Get the notifications for the user.
+     */
+    public function notifications(): HasMany
+    {
+        return $this->hasMany(Notification::class);
+    }
+
+    /**
+     * Check if user has a specific role.
+     */
+    public function hasRole(string $role): bool
+    {
+        return $this->role === $role;
+    }
+
+    /**
+     * Check if user is admin.
+     */
+    public function isAdmin(): bool
+    {
+        return $this->hasRole('admin');
     }
 }

@@ -10,6 +10,7 @@ use App\Http\Controllers\BillingController;
 use App\Http\Controllers\AnnouncementController;
 use Illuminate\Support\Facades\Route;
 
+
 Route::get('/', function () {
     return redirect()->route('dashboard');
 });
@@ -29,7 +30,10 @@ Route::middleware('auth')->group(function () {
     Route::patch('/staff/{staff}/toggle-status', [StaffController::class, 'toggleStatus'])->name('staff.toggle-status');
 
     // Patient Management
+    Route::post('patients/verify-all', [PatientController::class, 'verifyAll'])->name('patients.verify-all');
     Route::resource('patients', PatientController::class);
+    Route::get('patients/{patient}/verify-otp', [PatientController::class, 'showOtpForm'])->name('patients.otp.form');
+    Route::post('patients/{patient}/verify-otp', [PatientController::class, 'verifyOtp'])->name('patients.otp.verify');
     Route::patch('/patients/{patient}/verify', [PatientController::class, 'verify'])->name('patients.verify');
     Route::get('/patients/search', [PatientController::class, 'search'])->name('patients.search');
 
@@ -40,6 +44,8 @@ Route::middleware('auth')->group(function () {
     Route::patch('/appointments/{appointment}/complete', [AppointmentController::class, 'complete'])->name('appointments.complete');
     Route::get('/appointments/calendar', [AppointmentController::class, 'calendar'])->name('appointments.calendar');
     Route::get('/appointments/doctor-schedule', [AppointmentController::class, 'getDoctorSchedule'])->name('appointments.doctor-schedule');
+    Route::post('/appointments/lock', [AppointmentController::class, 'lock'])->name('appointments.lock');
+    Route::post('/appointments/unlock', [AppointmentController::class, 'unlock'])->name('appointments.unlock');
 
     // Consultation Management
     Route::resource('consultations', ConsultationController::class);
@@ -59,5 +65,6 @@ Route::middleware('auth')->group(function () {
     Route::patch('/announcements/{announcement}/toggle-status', [AnnouncementController::class, 'toggleStatus'])->name('announcements.toggle-status');
     Route::get('/announcements/public', [AnnouncementController::class, 'publicIndex'])->name('announcements.public');
 });
+
 
 require __DIR__.'/auth.php';

@@ -6,20 +6,53 @@ use App\Models\Patient;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 
 class PatientController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $patients = Patient::paginate(10);
-        return view('patients.index', compact('patients'));
+        $query = Patient::query();
+
+        // Search
+        if ($request->has('search') && $request->search != '') {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('full_name', 'like', "%{$search}%")
+                    ->orWhere('patient_id', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        // Filters
+        if ($request->has('gender') && $request->gender != '') {
+            $query->where('gender', $request->gender);
+        }
+
+        if ($request->has('status') && $request->status != '') {
+            $query->where('is_verified', $request->status === 'verified');
+        }
+
+        $patients = $query->latest()->paginate(10)->withQueryString();
+
+        // Statistics
+        $totalPatients = Patient::count();
+        $newPatientsThisMonth = Patient::whereMonth('created_at', now()->month)->count();
+        $unverifiedPatients = Patient::where('is_verified', false)->count();
+
+        return view('patients.index', compact(
+            'patients',
+            'totalPatients',
+            'newPatientsThisMonth',
+            'unverifiedPatients'
+        ));
     }
 
     public function create()
     {
         $bloodGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
-        $genders = ['male', 'female', 'other'];
-        return view('patients.create', compact('bloodGroups', 'genders'));
+        return view('patients.create', compact('bloodGroups'));
     }
 
     public function store(Request $request)
@@ -27,30 +60,28 @@ class PatientController extends Controller
         $request->validate([
             'full_name' => 'required|string|max:255',
             'date_of_birth' => 'required|date',
-            'gender' => 'required|in:male,female,other',
-            'phone' => 'required|string|max:20',
-            'email' => 'nullable|email|unique:patients',
-            'address' => 'required|string',
-            'emergency_contact_name' => 'required|string|max:255',
-            'emergency_contact_phone' => 'required|string|max:20',
-            'medical_history' => 'nullable|string',
-            'allergies' => 'nullable|string',
-            'blood_group' => 'nullable|in:A+,A-,B+,B-,AB+,AB-,O+,O-',
-            'notes' => 'nullable|string',
-            'photo' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'gender' => 'required|in:male,female',
+            'phone' => 'required|string|max:20|unique:patients,phone',
+            'email' => 'required|email|unique:patients,email',
+            'address' => 'nullable|string',
+            'emergency_contact_name' => 'nullable|string|max:255',
+            'emergency_contact_phone' => 'nullable|string|max:20',
+            'photo_data' => 'nullable|string',
         ]);
 
-        // Handle photo upload
         $photoPath = null;
-        if ($request->hasFile('photo')) {
-            $photoPath = $request->file('photo')->store('patient-photos', 'public');
+        if ($request->photo_data) {
+            $imageData = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $request->photo_data));
+            $photoPath = 'patient-photos/' . Str::random(40) . '.png';
+            Storage::disk('public')->put($photoPath, $imageData);
         }
 
-        // Create patient
-        Patient::create([
+        $otp = rand(100000, 999999);
+        $otpExpiresAt = now()->addMinutes(10);
+
+        $patient = Patient::create([
             'patient_id' => 'PAT' . strtoupper(Str::random(8)),
             'full_name' => $request->full_name,
-            'photo' => $photoPath,
             'date_of_birth' => $request->date_of_birth,
             'gender' => $request->gender,
             'phone' => $request->phone,
@@ -58,14 +89,38 @@ class PatientController extends Controller
             'address' => $request->address,
             'emergency_contact_name' => $request->emergency_contact_name,
             'emergency_contact_phone' => $request->emergency_contact_phone,
-            'medical_history' => $request->medical_history,
-            'allergies' => $request->allergies,
-            'blood_group' => $request->blood_group,
-            'notes' => $request->notes,
+            'photo' => $photoPath,
             'is_verified' => false,
+            'otp' => $otp,
+            'otp_expires_at' => $otpExpiresAt,
         ]);
 
-        return redirect()->route('patients.index')->with('success', 'Patient registered successfully.');
+        // TODO: Send OTP via SMS
+
+        return redirect()->route('patients.otp.form', ['patient' => $patient->id])->with('success', 'Patient registered. Please verify OTP. The OTP is ' . $otp);
+    }
+
+    public function showOtpForm(Patient $patient)
+    {
+        return view('patients.verify-otp', compact('patient'));
+    }
+
+    public function verifyOtp(Request $request, Patient $patient)
+    {
+        $request->validate([
+            'otp' => 'required|numeric',
+        ]);
+
+        if ($patient->otp === $request->otp && now()->lessThan($patient->otp_expires_at)) {
+            $patient->update([
+                'is_verified' => true,
+                'otp' => null,
+                'otp_expires_at' => null,
+            ]);
+            return redirect()->route('patients.index')->with('success', 'Patient verified successfully!');
+        } else {
+            return back()->withErrors(['otp' => 'Invalid or expired OTP.']);
+        }
     }
 
     public function show(Patient $patient)
@@ -152,16 +207,12 @@ class PatientController extends Controller
         return redirect()->route('patients.show', $patient)->with('success', 'Patient verified successfully.');
     }
 
-    public function search(Request $request)
+    public function verifyAll()
     {
-        $query = $request->get('q');
-        
-        $patients = Patient::where('full_name', 'like', "%{$query}%")
-            ->orWhere('patient_id', 'like', "%{$query}%")
-            ->orWhere('phone', 'like', "%{$query}%")
-            ->orWhere('email', 'like', "%{$query}%")
-            ->paginate(10);
+        Patient::where('is_verified', false)->update(['is_verified' => true]);
 
-        return view('patients.index', compact('patients', 'query'));
+        return redirect()->route('patients.index')->with('success', 'All unverified patients have been verified successfully.');
     }
+
+
 }

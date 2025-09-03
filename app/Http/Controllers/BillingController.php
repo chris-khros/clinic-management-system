@@ -16,14 +16,21 @@ class BillingController extends Controller
     public function index()
     {
         $bills = Bill::with(['patient', 'doctor', 'appointment'])->paginate(10);
-        return view('billing.index', compact('bills'));
+
+        $total_revenue = Bill::where('payment_status', 'paid')->sum('total_amount');
+        $outstanding_revenue = Bill::whereIn('payment_status', ['unpaid', 'partial'])->sum('total_amount');
+        $paid_bills_count = Bill::where('payment_status', 'paid')->count();
+
+        return view('billing.index', compact('bills', 'total_revenue', 'outstanding_revenue', 'paid_bills_count'));
     }
 
     public function create()
     {
         $patients = Patient::where('is_verified', true)->get();
         $services = Service::where('is_active', true)->get();
-        return view('billing.create', compact('patients', 'services'));
+        $lastBill = Bill::latest('id')->first();
+        $new_bill_id = $lastBill ? $lastBill->id + 1 : 1;
+        return view('billing.create', compact('patients', 'services', 'new_bill_id'));
     }
 
     public function store(Request $request)
@@ -222,7 +229,7 @@ class BillingController extends Controller
     public function generateInvoice(Bill $bill)
     {
         $bill->load(['patient', 'doctor', 'billItems.service']);
-        
+
         // Generate PDF invoice (you can use a package like dompdf)
         // For now, we'll just return a view
         return view('billing.invoice', compact('bill'));
@@ -236,7 +243,7 @@ class BillingController extends Controller
             ->sum('total_amount');
 
         $pendingBills = Bill::where('payment_status', 'pending')->count();
-        
+
         $recentBills = Bill::with(['patient'])
             ->orderBy('created_at', 'desc')
             ->limit(10)

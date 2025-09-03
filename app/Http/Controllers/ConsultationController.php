@@ -13,24 +13,22 @@ class ConsultationController extends Controller
     public function index()
     {
         $user = Auth::user();
-        
+
         if ($user->role === 'doctor') {
-            $consultations = $user->doctor->consultations()->with(['patient', 'appointment'])->paginate(10);
+            $consultations = $user->doctor->consultations()->with(['appointment.patient', 'doctor.user'])->paginate(10);
         } else {
-            $consultations = Consultation::with(['patient', 'doctor', 'appointment'])->paginate(10);
+            $consultations = Consultation::with(['appointment.patient', 'doctor.user'])->paginate(10);
         }
 
         return view('consultations.index', compact('consultations'));
     }
 
-    public function create()
+    public function create(Request $request)
     {
-        $appointments = Appointment::where('status', 'confirmed')
-            ->whereDoesntHave('consultation')
-            ->with(['patient', 'doctor'])
-            ->get();
+        $appointment_id = $request->query('appointment');
+        $appointment = Appointment::with('patient')->findOrFail($appointment_id);
 
-        return view('consultations.create', compact('appointments'));
+        return view('consultations.create', compact('appointment'));
     }
 
     public function store(Request $request)

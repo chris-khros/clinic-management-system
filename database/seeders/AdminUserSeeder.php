@@ -15,7 +15,7 @@ class AdminUserSeeder extends Seeder
         // Create admin user
         $adminUser = User::create([
             'name' => 'Admin User',
-            'email' => 'admin@clinic.com',
+            'email' => 'admin@healwell.com',
             'password' => Hash::make('password'),
             'role' => 'admin',
             'is_active' => true,
@@ -27,7 +27,7 @@ class AdminUserSeeder extends Seeder
             'employee_id' => 'EMP000001',
             'full_name' => 'Admin User',
             'phone' => '+1234567890',
-            'email' => 'admin@clinic.com',
+            'email' => 'admin@healwell.com',
             'qualifications' => 'System Administrator',
             'department' => 'Administration',
             'position' => 'System Administrator',
@@ -39,7 +39,7 @@ class AdminUserSeeder extends Seeder
         // Create a doctor user
         $doctorUser = User::create([
             'name' => 'Dr. John Smith',
-            'email' => 'doctor@clinic.com',
+            'email' => 'doctor@healwell.com',
             'password' => Hash::make('password'),
             'role' => 'doctor',
             'is_active' => true,
@@ -51,7 +51,7 @@ class AdminUserSeeder extends Seeder
             'employee_id' => 'EMP000002',
             'full_name' => 'Dr. John Smith',
             'phone' => '+1234567891',
-            'email' => 'doctor@clinic.com',
+            'email' => 'doctor@healwell.com',
             'qualifications' => 'MBBS, MD - General Medicine',
             'department' => 'General Medicine',
             'position' => 'Senior Doctor',
@@ -76,7 +76,7 @@ class AdminUserSeeder extends Seeder
         // Create receptionist user
         $receptionistUser = User::create([
             'name' => 'Jane Doe',
-            'email' => 'receptionist@clinic.com',
+            'email' => 'receptionist@healwell.com',
             'password' => Hash::make('password'),
             'role' => 'receptionist',
             'is_active' => true,
@@ -88,7 +88,7 @@ class AdminUserSeeder extends Seeder
             'employee_id' => 'EMP000003',
             'full_name' => 'Jane Doe',
             'phone' => '+1234567892',
-            'email' => 'receptionist@clinic.com',
+            'email' => 'receptionist@healwell.com',
             'qualifications' => 'Diploma in Medical Administration',
             'department' => 'Reception',
             'position' => 'Senior Receptionist',

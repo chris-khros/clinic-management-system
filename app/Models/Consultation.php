@@ -16,16 +16,29 @@ class Consultation extends Model
         'doctor_id',
         'patient_id',
         'symptoms',
+        'chief_complaint',
+        'duration',
+        'vital_signs',
+        'physical_findings',
+        'primary_diagnosis',
+        'secondary_diagnosis',
         'diagnosis',
         'treatment_plan',
+        'medications',
         'prescription',
         'notes',
         'consultation_date',
+        'consultation_started_at',
+        'consultation_completed_at',
+        'follow_up_date',
         'status',
     ];
 
     protected $casts = [
         'consultation_date' => 'datetime',
+        'consultation_started_at' => 'datetime',
+        'consultation_completed_at' => 'datetime',
+        'follow_up_date' => 'date',
     ];
 
     /**

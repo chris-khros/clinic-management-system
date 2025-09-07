@@ -13,6 +13,7 @@ class Bill extends Model
 
     protected $fillable = [
         'bill_number',
+        'bill_date',
         'patient_id',
         'appointment_id',
         'doctor_id',
@@ -32,6 +33,7 @@ class Bill extends Model
         'tax_amount' => 'decimal:2',
         'discount_amount' => 'decimal:2',
         'total_amount' => 'decimal:2',
+        'bill_date' => 'datetime',
         'due_date' => 'datetime',
         'paid_at' => 'datetime',
     ];

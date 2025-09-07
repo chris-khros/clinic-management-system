@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PatientController extends Controller
 {
@@ -76,9 +77,6 @@ class PatientController extends Controller
             Storage::disk('public')->put($photoPath, $imageData);
         }
 
-        $otp = rand(100000, 999999);
-        $otpExpiresAt = now()->addMinutes(10);
-
         $patient = Patient::create([
             'patient_id' => 'PAT' . strtoupper(Str::random(8)),
             'full_name' => $request->full_name,
@@ -91,13 +89,19 @@ class PatientController extends Controller
             'emergency_contact_phone' => $request->emergency_contact_phone,
             'photo' => $photoPath,
             'is_verified' => false,
-            'otp' => $otp,
-            'otp_expires_at' => $otpExpiresAt,
         ]);
 
-        // TODO: Send OTP via SMS
+        // Send OTP for email verification
+        $otpService = app(\App\Services\OtpService::class);
+        $otpSent = $otpService->sendVerificationOtp($patient);
 
-        return redirect()->route('patients.otp.form', ['patient' => $patient->id])->with('success', 'Patient registered. Please verify OTP. The OTP is ' . $otp);
+        if ($otpSent) {
+            return redirect()->route('otp.verify-form', ['email' => $patient->email])
+                ->with('success', 'Patient registered successfully. Please check your email for the verification code.');
+        } else {
+            return redirect()->route('patients.index')
+                ->with('error', 'Patient registered but failed to send verification email. Please try resending the OTP.');
+        }
     }
 
     public function showOtpForm(Patient $patient)
@@ -214,5 +218,48 @@ class PatientController extends Controller
         return redirect()->route('patients.index')->with('success', 'All unverified patients have been verified successfully.');
     }
 
+
+    public function uploadDocument(Request $request, Patient $patient)
+    {
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string|max:1000',
+            'document_type' => 'nullable|string|max:100',
+            'file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:10240', // 10MB
+        ]);
+
+        $file = $request->file('file');
+        $path = $file->store('patient-documents/' . $patient->id, 'public');
+
+        $document = \App\Models\PatientDocument::create([
+            'patient_id' => $patient->id,
+            'title' => $validated['title'],
+            'description' => $validated['description'] ?? null,
+            'file_path' => $path,
+            'file_type' => $file->getClientMimeType(),
+            'file_size' => $file->getSize(),
+            'document_type' => $validated['document_type'] ?? null,
+            'is_verified' => false,
+            'uploaded_at' => now(),
+        ]);
+
+        if ($request->ajax() || $request->wantsJson() || $request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Document uploaded successfully.',
+                'document' => [
+                    'id' => $document->id,
+                    'title' => $document->title,
+                    'document_type' => $document->document_type,
+                    'file_type' => $document->file_type,
+                    'file_size_kb' => round($document->file_size / 1024, 1),
+                    'uploaded_at' => optional($document->uploaded_at)->toDateTimeString(),
+                    'url' => asset('storage/' . $document->file_path),
+                ],
+            ]);
+        }
+
+        return redirect()->route('patients.show', $patient)->with('success', 'Document uploaded successfully.');
+    }
 
 }

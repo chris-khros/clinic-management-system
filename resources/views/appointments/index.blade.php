@@ -57,6 +57,9 @@
                                         <td class="px-4 py-2 whitespace-nowrap text-right text-sm font-medium space-x-2">
                                             <a href="{{ route('appointments.show', $appointment) }}" class="text-indigo-600 hover:text-indigo-900">View</a>
                                             <a href="{{ route('appointments.edit', $appointment) }}" class="text-blue-600 hover:text-blue-900">Edit</a>
+                                            @if(in_array($appointment->status, ['scheduled','confirmed']))
+                                                <a href="{{ route('consultations.create', ['appointment' => $appointment->id]) }}" class="text-green-600 hover:text-green-800">Consult</a>
+                                            @endif
                                             @if($appointment->status !== 'cancelled')
                                                 <form action="{{ route('appointments.cancel', $appointment) }}" method="POST" class="inline">
                                                     @csrf

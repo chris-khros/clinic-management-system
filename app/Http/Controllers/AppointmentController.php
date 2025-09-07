@@ -9,6 +9,7 @@ use App\Models\AppointmentLock;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use App\Services\CalendarService;
 
 class AppointmentController extends Controller
 {
@@ -97,7 +98,7 @@ class AppointmentController extends Controller
             }
 
             // Create appointment
-            Appointment::create([
+            $appointment = Appointment::create([
                 'doctor_id' => $request->doctor_id,
                 'patient_id' => $request->patient_id,
                 'appointment_date' => $request->appointment_date,
@@ -106,6 +107,13 @@ class AppointmentController extends Controller
                 'reason' => $request->reason,
                 'notes' => $request->notes,
             ]);
+
+            // Push to Google Calendar (fire and forget)
+            try {
+                app(CalendarService::class)->createEventForAppointment($appointment, config('google-calendar.calendar_id'));
+            } catch (\Throwable $e) {
+                // ignore calendar errors; app should still succeed
+            }
 
             DB::commit();
             return redirect()->route('appointments.index')->with('success', 'Appointment scheduled successfully.');
@@ -343,5 +351,24 @@ class AppointmentController extends Controller
             ->delete();
 
         return response()->json(['ok' => true]);
+    }
+
+    public function addEventToGoogleCalendar(Appointment $appointment)
+    {
+        $calendarService = app(\App\Services\CalendarService::class);
+        $googleEvent = $calendarService->createEventForAppointment($appointment);
+
+        if ($googleEvent) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Event added to Google Calendar successfully.',
+                'eventId' => $googleEvent->id
+            ]);
+        } else {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to add event to Google Calendar. Check logs for details.'
+            ], 500);
+        }
     }
 }

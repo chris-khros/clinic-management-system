@@ -13,12 +13,25 @@ use Illuminate\Support\Str;
 
 class BillingController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $bills = Bill::with(['patient', 'doctor', 'appointment'])->paginate(10);
+        $query = Bill::with(['patient', 'doctor', 'appointment']);
+
+        // Filters
+        if ($request->filled('status')) {
+            $query->where('payment_status', $request->input('status'));
+        }
+        if ($request->filled('date_from')) {
+            $query->whereDate('bill_date', '>=', $request->input('date_from'));
+        }
+        if ($request->filled('date_to')) {
+            $query->whereDate('bill_date', '<=', $request->input('date_to'));
+        }
+
+        $bills = $query->orderByDesc('bill_date')->paginate(10)->withQueryString();
 
         $total_revenue = Bill::where('payment_status', 'paid')->sum('total_amount');
-        $outstanding_revenue = Bill::whereIn('payment_status', ['unpaid', 'partial'])->sum('total_amount');
+        $outstanding_revenue = Bill::whereIn('payment_status', ['pending', 'unpaid'])->sum('total_amount');
         $paid_bills_count = Bill::where('payment_status', 'paid')->count();
 
         return view('billing.index', compact('bills', 'total_revenue', 'outstanding_revenue', 'paid_bills_count'));
@@ -26,7 +39,7 @@ class BillingController extends Controller
 
     public function create()
     {
-        $patients = Patient::where('is_verified', true)->get();
+        $patients = Patient::all(); // Get all patients, not just verified ones
         $services = Service::where('is_active', true)->get();
         $lastBill = Bill::latest('id')->first();
         $new_bill_id = $lastBill ? $lastBill->id + 1 : 1;
@@ -35,15 +48,19 @@ class BillingController extends Controller
 
     public function store(Request $request)
     {
+        // Filter out empty service entries
+        $services = array_filter($request->services ?? [], function($service) {
+            return !empty($service['service_id']) && !empty($service['quantity']);
+        });
+
+        if (empty($services)) {
+            return back()->withErrors(['services' => 'At least one service is required.']);
+        }
+
         $request->validate([
             'patient_id' => 'required|exists:patients,id',
             'appointment_id' => 'nullable|exists:appointments,id',
             'doctor_id' => 'nullable|exists:doctors,id',
-            'services' => 'required|array',
-            'services.*.service_id' => 'required|exists:services,id',
-            'services.*.quantity' => 'required|integer|min:1',
-            'tax_amount' => 'nullable|numeric|min:0',
-            'discount_amount' => 'nullable|numeric|min:0',
             'payment_method' => 'nullable|in:cash,card,insurance,online',
             'notes' => 'nullable|string',
             'due_date' => 'required|date',
@@ -54,13 +71,13 @@ class BillingController extends Controller
         try {
             // Calculate totals
             $subtotal = 0;
-            foreach ($request->services as $service) {
+            foreach ($services as $service) {
                 $serviceModel = Service::find($service['service_id']);
                 $subtotal += $serviceModel->price * $service['quantity'];
             }
 
-            $taxAmount = $request->tax_amount ?? 0;
-            $discountAmount = $request->discount_amount ?? 0;
+            $taxAmount = $subtotal * 0.10; // 10% tax
+            $discountAmount = 0;
             $totalAmount = $subtotal + $taxAmount - $discountAmount;
 
             // Create bill
@@ -77,10 +94,11 @@ class BillingController extends Controller
                 'payment_method' => $request->payment_method,
                 'notes' => $request->notes,
                 'due_date' => $request->due_date,
+                'bill_date' => now(),
             ]);
 
             // Create bill items
-            foreach ($request->services as $service) {
+            foreach ($services as $service) {
                 $serviceModel = Service::find($service['service_id']);
                 $unitPrice = $serviceModel->price;
                 $quantity = $service['quantity'];
@@ -121,13 +139,17 @@ class BillingController extends Controller
 
     public function update(Request $request, Bill $bill)
     {
+        // Filter out empty service entries
+        $services = array_filter($request->services ?? [], function($service) {
+            return !empty($service['service_id']) && !empty($service['quantity']);
+        });
+
+        if (empty($services)) {
+            return back()->withErrors(['services' => 'At least one service is required.']);
+        }
+
         $request->validate([
             'patient_id' => 'required|exists:patients,id',
-            'services' => 'required|array',
-            'services.*.service_id' => 'required|exists:services,id',
-            'services.*.quantity' => 'required|integer|min:1',
-            'tax_amount' => 'nullable|numeric|min:0',
-            'discount_amount' => 'nullable|numeric|min:0',
             'payment_method' => 'nullable|in:cash,card,insurance,online',
             'notes' => 'nullable|string',
             'due_date' => 'required|date',
@@ -138,7 +160,7 @@ class BillingController extends Controller
         try {
             // Calculate totals
             $subtotal = 0;
-            foreach ($request->services as $service) {
+            foreach ($services as $service) {
                 $serviceModel = Service::find($service['service_id']);
                 $subtotal += $serviceModel->price * $service['quantity'];
             }
@@ -163,7 +185,7 @@ class BillingController extends Controller
             $bill->billItems()->delete();
 
             // Create new bill items
-            foreach ($request->services as $service) {
+            foreach ($services as $service) {
                 $serviceModel = Service::find($service['service_id']);
                 $unitPrice = $serviceModel->price;
                 $quantity = $service['quantity'];
@@ -250,5 +272,29 @@ class BillingController extends Controller
             ->get();
 
         return view('billing.reports', compact('monthlyRevenue', 'pendingBills', 'recentBills'));
+    }
+
+    public function updateStatus(Request $request, Bill $bill)
+    {
+        $request->validate([
+            'payment_status' => 'required|in:pending,paid,unpaid',
+            'payment_method' => 'nullable|in:cash,card,insurance,online',
+        ]);
+
+        $updates = [
+            'payment_status' => $request->payment_status,
+        ];
+
+        if ($request->payment_status === 'paid') {
+            $updates['payment_method'] = $request->payment_method ?? $bill->payment_method;
+            $updates['paid_at'] = now();
+        } else {
+            // Clear paid_at for non-paid statuses
+            $updates['paid_at'] = null;
+        }
+
+        $bill->update($updates);
+
+        return back()->with('success', 'Payment status updated.');
     }
 }

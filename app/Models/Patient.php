@@ -27,11 +27,14 @@ class Patient extends Model
         'notes',
         'is_verified',
         'email_verified_at',
+        'otp',
+        'otp_expires_at',
     ];
 
     protected $casts = [
         'date_of_birth' => 'date',
         'email_verified_at' => 'datetime',
+        'otp_expires_at' => 'datetime',
         'is_verified' => 'boolean',
     ];
 

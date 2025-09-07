@@ -19,7 +19,7 @@
                                 <select name="patient_id" id="patient_id" class="mt-2 block w-full rounded-md border-gray-300 shadow-sm" required>
                                     <option value="">Select Patient</option>
                                     @foreach($patients as $patient)
-                                        <option value="{{ $patient->id }}">{{ $patient->first_name }} {{ $patient->last_name }}</option>
+                                        <option value="{{ $patient->id }}">{{ $patient->full_name }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -42,7 +42,25 @@
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
-                                    <!-- Dynamic rows will be added here -->
+                                    <!-- Default row -->
+                                    <tr>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <select name="services[0][service_id]" class="service-select block w-full rounded-md border-gray-300 shadow-sm">
+                                                <option value="">Select Service</option>
+                                                @foreach($services as $service)
+                                                    <option value="{{ $service->id }}" data-price="{{ $service->price }}">{{ $service->name }}</option>
+                                                @endforeach
+                                            </select>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <input type="number" name="services[0][quantity]" class="quantity-input w-20 rounded-md border-gray-300 shadow-sm" value="1" min="1">
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap price-cell">$0.00</td>
+                                        <td class="px-6 py-4 whitespace-nowrap total-cell">$0.00</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-right">
+                                            <button type="button" class="remove-item text-red-500">Remove</button>
+                                        </td>
+                                    </tr>
                                 </tbody>
                             </table>
                             <button type="button" id="add-item" class="mt-4 bg-blue-500 text-white py-2 px-4 rounded-lg">+ Add Item</button>
@@ -69,17 +87,25 @@
                         <!-- Payment Details -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <label for="payment_status" class="block text-sm font-medium text-gray-700">Payment Status</label>
-                                <select name="payment_status" id="payment_status" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                                    <option value="unpaid">Unpaid</option>
-                                    <option value="partial">Partial</option>
-                                    <option value="paid">Paid</option>
+                                <label for="payment_method" class="block text-sm font-medium text-gray-700">Payment Method</label>
+                                <select name="payment_method" id="payment_method" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                                    <option value="">Select Payment Method</option>
+                                    <option value="cash">Cash</option>
+                                    <option value="card">Card</option>
+                                    <option value="insurance">Insurance</option>
+                                    <option value="online">Online</option>
                                 </select>
                             </div>
                             <div>
-                                <label for="amount_paid" class="block text-sm font-medium text-gray-700">Amount Paid</label>
-                                <input type="number" name="amount_paid" id="amount_paid" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" value="0.00" step="0.01">
+                                <label for="due_date" class="block text-sm font-medium text-gray-700">Due Date</label>
+                                <input type="date" name="due_date" id="due_date" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" value="{{ now()->addDays(30)->format('Y-m-d') }}" required>
                             </div>
+                        </div>
+
+                        <!-- Additional Details -->
+                        <div class="mt-6">
+                            <label for="notes" class="block text-sm font-medium text-gray-700">Notes</label>
+                            <textarea name="notes" id="notes" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" placeholder="Additional notes or comments..."></textarea>
                         </div>
                     </div>
 
@@ -98,18 +124,19 @@
             const billItemsTable = document.getElementById('bill-items').getElementsByTagName('tbody')[0];
             const addItemButton = document.getElementById('add-item');
             const services = @json($services);
+            let rowIndex = 1; // Start from 1 since we have a default row at index 0
 
             addItemButton.addEventListener('click', () => {
                 const newRow = billItemsTable.insertRow();
                 newRow.innerHTML = `
                     <td class="px-6 py-4 whitespace-nowrap">
-                        <select name="items[][service_id]" class="service-select block w-full rounded-md border-gray-300 shadow-sm">
+                        <select name="services[${rowIndex}][service_id]" class="service-select block w-full rounded-md border-gray-300 shadow-sm">
                             <option value="">Select Service</option>
                             ${services.map(s => `<option value="${s.id}" data-price="${s.price}">${s.name}</option>`).join('')}
                         </select>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
-                        <input type="number" name="items[][quantity]" class="quantity-input w-20 rounded-md border-gray-300 shadow-sm" value="1" min="1">
+                        <input type="number" name="services[${rowIndex}][quantity]" class="quantity-input w-20 rounded-md border-gray-300 shadow-sm" value="1" min="1">
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap price-cell">$0.00</td>
                     <td class="px-6 py-4 whitespace-nowrap total-cell">$0.00</td>
@@ -117,6 +144,7 @@
                         <button type="button" class="remove-item text-red-500">Remove</button>
                     </td>
                 `;
+                rowIndex++;
             });
 
             billItemsTable.addEventListener('change', (e) => {
@@ -152,16 +180,15 @@
                 let subtotal = 0;
                 document.querySelectorAll('#bill-items tbody tr').forEach(row => {
                     const totalText = row.querySelector('.total-cell').textContent;
-                    subtotal += parseFloat(totalText.replace('
-, '')) || 0;
+                    subtotal += parseFloat(totalText.replace('$', '')) || 0;
                 });
 
                 const tax = subtotal * 0.10;
                 const total = subtotal + tax;
 
-                document.getElementById('subtotal').textContent = `${subtotal.toFixed(2)}`;
-                document.getElementById('tax').textContent = `${tax.toFixed(2)}`;
-                document.getElementById('total').textContent = `${total.toFixed(2)}`;
+                document.getElementById('subtotal').textContent = `$${subtotal.toFixed(2)}`;
+                document.getElementById('tax').textContent = `$${tax.toFixed(2)}`;
+                document.getElementById('total').textContent = `$${total.toFixed(2)}`;
             }
         });
     </script>

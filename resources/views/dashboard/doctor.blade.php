@@ -91,18 +91,21 @@
                 <div class="p-6">
                     <h3 class="text-lg font-semibold text-gray-900 mb-4">Patient Quick Search</h3>
                     <div class="relative">
-                        <input type="text" id="patient-search" placeholder="Search by name, ID, or contact number..."
-                               class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <input type="text"
+                               id="doctor-patient-search"
+                               placeholder="Search by name, ID, phone, or email..."
+                               class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                               autocomplete="off">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                             </svg>
                         </div>
                     </div>
-                    <div id="search-results" class="mt-4 hidden">
-                        <div class="border border-gray-200 rounded-lg max-h-60 overflow-y-auto">
-                            <!-- Search results will be populated here -->
-                        </div>
+
+                    <!-- Search Results -->
+                    <div id="doctor-search-results" class="mt-2 bg-white border border-gray-300 rounded-lg shadow-lg hidden max-h-96 overflow-y-auto">
+                        <!-- Results will be populated here -->
                     </div>
                 </div>
             </div>
@@ -145,7 +148,7 @@
                                                 {{ \Carbon\Carbon::parse($appointment->appointment_time)->format('h:i A') }}
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap">
-                                                <div class="text-sm font-medium text-gray-900">{{ $appointment->patient->first_name }} {{ $appointment->patient->last_name }}</div>
+                                                <div class="text-sm font-medium text-gray-900">{{ $appointment->patient->full_name }}</div>
                                                 <div class="text-sm text-gray-500">{{ $appointment->patient->email }}</div>
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap">
@@ -163,6 +166,9 @@
                                                 @if($appointment->status === 'confirmed')
                                                     <a href="{{ route('consultations.create', ['appointment' => $appointment->id]) }}" class="text-green-600 hover:text-green-900">Start Consultation</a>
                                                 @endif
+                                                <form action="#" method="POST" class="inline ml-3" onsubmit="return false;">
+                                                    <button type="button" class="text-blue-600 hover:text-blue-900" onclick="pushToCalendar({{ $appointment->id }})">Add to Google Calendar</button>
+                                                </form>
                                             </td>
                                         </tr>
                                     @endforeach
@@ -252,4 +258,102 @@
             </div>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeDoctorSearch();
+        });
+
+        function initializeDoctorSearch() {
+            const searchInput = document.getElementById('doctor-patient-search');
+            const searchResults = document.getElementById('doctor-search-results');
+            let searchTimeout;
+
+            // Debounced search function
+            function performDoctorSearch(query) {
+                if (query.length < 2) {
+                    searchResults.classList.add('hidden');
+                    return;
+                }
+
+                fetch(`/search/patients?q=${encodeURIComponent(query)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        displayDoctorSearchResults(data);
+                    })
+                    .catch(error => {
+                        console.error('Search error:', error);
+                    });
+            }
+
+            // Display search results
+            function displayDoctorSearchResults(patients) {
+                if (patients.length === 0) {
+                    searchResults.innerHTML = '<div class="p-4 text-gray-500 text-center">No patients found</div>';
+                } else {
+                    searchResults.innerHTML = patients.map(patient => `
+                        <a href="${patient.url}" class="block p-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <div class="font-medium text-gray-900">${patient.full_name}</div>
+                                    <div class="text-sm text-gray-500">ID: ${patient.patient_id} • ${patient.phone}</div>
+                                    ${patient.email ? `<div class="text-sm text-gray-500">${patient.email}</div>` : ''}
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-sm text-gray-500">${patient.gender}</div>
+                                    ${patient.age ? `<div class="text-sm text-gray-500">${patient.age} years</div>` : ''}
+                                </div>
+                            </div>
+                        </a>
+                    `).join('');
+                }
+                searchResults.classList.remove('hidden');
+            }
+
+            // Event listeners
+            searchInput.addEventListener('input', function() {
+                const query = this.value.trim();
+
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    performDoctorSearch(query);
+                }, 300);
+            });
+
+            // Hide results when clicking outside
+            document.addEventListener('click', function(event) {
+                if (!searchInput.contains(event.target) && !searchResults.contains(event.target)) {
+                    searchResults.classList.add('hidden');
+                }
+            });
+
+            // Handle keyboard navigation
+            searchInput.addEventListener('keydown', function(event) {
+                if (event.key === 'Escape') {
+                    searchResults.classList.add('hidden');
+                    searchInput.blur();
+                }
+            });
+        }
+
+        async function pushToCalendar(appointmentId) {
+            try {
+                const resp = await fetch(`/appointments/${appointmentId}/google-calendar`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'Accept': 'application/json'
+                    }
+                });
+                const data = await resp.json();
+                if (data.success) {
+                    alert('Event added to Google Calendar');
+                } else {
+                    alert('Failed to add event: ' + (data.message || 'Unknown error'));
+                }
+            } catch (e) {
+                alert('Error adding to calendar');
+            }
+        }
+    </script>
 </x-app-layout>

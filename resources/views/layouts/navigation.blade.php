@@ -15,31 +15,31 @@
                     <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                         {{ __('Dashboard') }}
                     </x-nav-link>
-                    
+
                     @if(auth()->user()->role === 'admin')
                         <x-nav-link :href="route('staff.index')" :active="request()->routeIs('staff.*')">
                             {{ __('Staff Management') }}
                         </x-nav-link>
                     @endif
-                    
+
                     <x-nav-link :href="route('patients.index')" :active="request()->routeIs('patients.*')">
                         {{ __('Patients') }}
                     </x-nav-link>
-                    
+
                     <x-nav-link :href="route('appointments.index')" :active="request()->routeIs('appointments.*')">
                         {{ __('Appointments') }}
                     </x-nav-link>
-                    
+
                     @if(auth()->user()->role === 'doctor' || auth()->user()->role === 'admin')
                         <x-nav-link :href="route('consultations.index')" :active="request()->routeIs('consultations.*')">
                             {{ __('Consultations') }}
                         </x-nav-link>
                     @endif
-                    
+
                     <x-nav-link :href="route('billing.index')" :active="request()->routeIs('billing.*')">
                         {{ __('Billing') }}
                     </x-nav-link>
-                    
+
                     <x-nav-link :href="route('announcements.index')" :active="request()->routeIs('announcements.*')">
                         {{ __('Announcements') }}
                     </x-nav-link>
@@ -67,7 +67,13 @@
                                 {{ __('Profile') }}
                             </x-dropdown-link>
 
-                            <!-- Authentication -->
+                                        <div class="hidden sm:flex sm:items-center sm:ms-6">
+                <x-nav-link :href="route('appointments.calendar')" :active="request()->routeIs('appointments.calendar')">
+                    {{ __('Appointments Calendar') }}
+                </x-nav-link>
+            </div>
+
+            <!-- Authentication -->
                             <form method="POST" action="{{ route('logout') }}">
                                 @csrf
 
@@ -77,9 +83,9 @@
                                     {{ __('Log Out') }}
                                 </x-dropdown-link>
                             </form>
-                        </x-slot>
-                    </x-dropdown>
-                </div>
+        </x-slot>
+    </x-dropdown>
+</div>
             </div>
 
             <!-- Hamburger -->
@@ -100,31 +106,31 @@
             <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                 {{ __('Dashboard') }}
             </x-responsive-nav-link>
-            
+
             @if(auth()->user()->role === 'admin')
                 <x-responsive-nav-link :href="route('staff.index')" :active="request()->routeIs('staff.*')">
                     {{ __('Staff Management') }}
                 </x-responsive-nav-link>
             @endif
-            
+
             <x-responsive-nav-link :href="route('patients.index')" :active="request()->routeIs('patients.*')">
                 {{ __('Patients') }}
             </x-responsive-nav-link>
-            
+
             <x-responsive-nav-link :href="route('appointments.index')" :active="request()->routeIs('appointments.*')">
                 {{ __('Appointments') }}
             </x-responsive-nav-link>
-            
+
             @if(auth()->user()->role === 'doctor' || auth()->user()->role === 'admin')
                 <x-responsive-nav-link :href="route('consultations.index')" :active="request()->routeIs('consultations.*')">
                     {{ __('Consultations') }}
                 </x-responsive-nav-link>
             @endif
-            
+
             <x-responsive-nav-link :href="route('billing.index')" :active="request()->routeIs('billing.*')">
                 {{ __('Billing') }}
             </x-responsive-nav-link>
-            
+
             <x-responsive-nav-link :href="route('announcements.index')" :active="request()->routeIs('announcements.*')">
                 {{ __('Announcements') }}
             </x-responsive-nav-link>

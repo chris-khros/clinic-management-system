@@ -93,7 +93,7 @@
                         <!-- Photo Upload -->
                         <h3 class="text-lg font-semibold mt-8 mb-4">Patient Photo</h3>
                         <div class="flex items-center">
-                            <img src="{{ $patient->photo ? asset('storage/' . $patient->photo) : asset('images/default-avatar.png') }}" alt="Patient Photo" class="w-24 h-24 rounded-full object-cover mr-6">
+                            <img src="{{ $patient->photo ? asset('storage/' . $patient->photo) : asset('user-icon.png') }}" alt="Patient Photo" class="w-24 h-24 rounded-full object-cover mr-6">
                             <div>
                                 <label for="photo" class="block text-sm font-medium text-gray-700">Upload New Photo</label>
                                 <input type="file" name="photo" id="photo" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">

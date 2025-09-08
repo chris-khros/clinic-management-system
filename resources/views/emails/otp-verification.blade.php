@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Email Verification</title>
+    <title>{{ config('app.name') }} - Email Verification</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -63,14 +63,15 @@
 </head>
 <body>
     <div class="header">
-        <h1>Clinic Management System</h1>
+        <img src="{{ asset('clinic-logo.png') }}" alt="{{ config('app.name') }} Logo" style="max-height: 48px; display: block; margin: 0 auto 8px;" />
+        <h1>{{ config('app.name') }}</h1>
         <p>Email Verification</p>
     </div>
 
     <div class="content">
         <h2>Hello {{ $patient->first_name }} {{ $patient->last_name }}!</h2>
 
-        <p>Thank you for registering with our clinic management system. To complete your registration and verify your email address, please use the verification code below:</p>
+        <p>Thank you for registering with {{ config('app.name') }}. To complete your registration and verify your email address, please use the verification code below:</p>
 
         <div class="otp-code">
             {{ $otpCode }}
@@ -90,12 +91,12 @@
         <p>If you have any questions or need assistance, please contact our support team.</p>
 
         <p>Best regards,<br>
-        <strong>Clinic Management System Team</strong></p>
+        <strong>{{ config('app.name') }} Team</strong></p>
     </div>
 
     <div class="footer">
         <p>This is an automated message. Please do not reply to this email.</p>
-        <p>&copy; {{ date('Y') }} Clinic Management System. All rights reserved.</p>
+        <p>&copy; {{ date('Y') }} {{ config('app.name') }}. All rights reserved.</p>
     </div>
 </body>
 </html>

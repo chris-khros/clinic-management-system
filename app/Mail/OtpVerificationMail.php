@@ -32,7 +32,7 @@ class OtpVerificationMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Email Verification - Clinic Management System',
+            subject: 'Email Verification - ' . config('app.name'),
         );
     }
 

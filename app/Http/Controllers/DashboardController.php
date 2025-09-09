@@ -439,11 +439,11 @@ class DashboardController extends Controller
         }
         fclose($file);
 
-        // Send email with attachment
+        // Send email with attachment (branded HTML)
         try {
-            Mail::raw('Please find attached the requested report.', function ($message) use ($request, $filepath, $filename) {
+            Mail::send('emails.report', ['reportType' => $request->report_type], function ($message) use ($request, $filepath, $filename) {
                 $message->to($request->email)
-                        ->subject('Clinic Management System - Report')
+                        ->subject(config('app.name') . ' - Report')
                         ->attach($filepath, ['as' => $filename]);
             });
 

@@ -63,7 +63,7 @@
 </head>
 <body>
     <div class="header">
-        <img src="{{ asset('clinic-logo.png') }}" alt="{{ config('app.name') }} Logo" style="max-height: 48px; display: block; margin: 0 auto 8px;" />
+        <img src="{{ $message->embed(public_path('clinic-logo.png')) }}" alt="{{ config('app.name') }} Logo" style="max-height: 48px; display: block; margin: 0 auto 8px;" />
         <h1>{{ config('app.name') }}</h1>
         <p>Email Verification</p>
     </div>

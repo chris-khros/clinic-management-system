@@ -37,14 +37,8 @@
 
                         <div>
                             <label class="block text-sm font-medium mb-1">Patient</label>
-                            <select name="patient_id" id="patient_id" class="border rounded p-2 w-full" required>
-                                <option value="">Select a patient</option>
-                                @foreach($patients as $p)
-                                    <option value="{{ $p->id }}" {{ (int) old('patient_id', $appointment->patient_id) === (int) $p->id ? 'selected' : '' }}>
-                                        {{ $p->full_name ?? ('#'.$p->id) }}
-                                    </option>
-                                @endforeach
-                            </select>
+                            <input type="text" class="border rounded p-2 w-full bg-gray-100" value="{{ $appointment->patient->full_name ?? ('#'.$appointment->patient_id) }}" readonly>
+                            <input type="hidden" name="patient_id" value="{{ $appointment->patient_id }}">
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -85,12 +79,21 @@
                         </div>
                     </form>
 
+                    @php
+                        $rawTime = old('appointment_time') ?? (string) $appointment->appointment_time;
+                        try {
+                            $currentTime = $rawTime ? \Carbon\Carbon::parse($rawTime)->format('H:i') : null;
+                        } catch (\Exception $e) {
+                            $currentTime = strlen($rawTime) >= 5 ? substr($rawTime, 0, 5) : null;
+                        }
+                    @endphp
+
                     <script>
                         const doctorEl = document.getElementById('doctor_id');
                         const dateEl = document.getElementById('appointment_date');
                         const timeEl = document.getElementById('appointment_time');
 
-                        const currentTime = `{{ old('appointment_time', substr($appointment->appointment_time, 0, 5)) }}`;
+                        const currentTime = @json($currentTime);
 
                         function timeRange(start, end, stepMinutes = 30) {
                             const out = [];

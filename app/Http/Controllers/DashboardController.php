@@ -73,69 +73,13 @@ class DashboardController extends Controller
 
     private function receptionistDashboard()
     {
-        $today = today();
-        $tomorrow = $today->copy()->addDay();
-        $thisWeek = $today->copy()->startOfWeek();
-        $thisMonth = $today->copy()->startOfMonth();
-
-        // Basic statistics
         $data = [
-            'today_appointments' => Appointment::whereDate('appointment_date', $today)->count(),
+            'today_appointments' => Appointment::whereDate('appointment_date', today())->count(),
             'total_patients' => Patient::count(),
             'pending_appointments' => Appointment::where('status', 'scheduled')->count(),
-            'total_doctors' => Doctor::where('is_active', true)->count(),
-            'confirmed_appointments' => Appointment::where('status', 'confirmed')->count(),
-            'completed_appointments' => Appointment::where('status', 'completed')->count(),
-            'cancelled_appointments' => Appointment::where('status', 'cancelled')->count(),
-            
-            // Today's appointments with detailed information
-            'todays_appointments_list' => Appointment::whereDate('appointment_date', $today)
-                ->with(['patient', 'doctor.user'])
-                ->orderBy('appointment_time')
-                ->get(),
-            
-            // Tomorrow's appointments
-            'tomorrows_appointments' => Appointment::whereDate('appointment_date', $tomorrow)
-                ->with(['patient', 'doctor.user'])
-                ->orderBy('appointment_time')
-                ->get(),
-            
-            // This week's statistics
-            'this_week_appointments' => Appointment::whereBetween('appointment_date', [$thisWeek, $thisWeek->copy()->endOfWeek()])->count(),
-            
-            // This month's statistics
-            'this_month_appointments' => Appointment::whereBetween('appointment_date', [$thisMonth, $thisMonth->copy()->endOfMonth()])->count(),
-            
-            // Recent patients (last 7 days)
-            'recent_patients' => Patient::where('created_at', '>=', $today->copy()->subDays(7))->count(),
-            
-            // Pending bills
-            'pending_bills' => Bill::where('payment_status', 'pending')->count(),
-            'total_revenue_today' => Bill::whereDate('created_at', $today)
-                ->where('payment_status', 'paid')
-                ->sum('total_amount'),
-            
-            // Upcoming appointments (next 7 days)
-            'upcoming_appointments' => Appointment::whereBetween('appointment_date', [$today, $today->copy()->addDays(7)])
-                ->whereIn('status', ['scheduled', 'confirmed'])
-                ->with(['patient', 'doctor.user'])
-                ->orderBy('appointment_date')
-                ->orderBy('appointment_time')
-                ->get(),
-            
-            // Doctor availability
-            'available_doctors' => Doctor::where('is_active', true)
-                ->with('user')
-                ->get(),
-            
-            // Appointment status breakdown
-            'appointment_status_breakdown' => [
-                'scheduled' => Appointment::where('status', 'scheduled')->count(),
-                'confirmed' => Appointment::where('status', 'confirmed')->count(),
-                'in_progress' => Appointment::where('status', 'in_progress')->count(),
-                'completed' => Appointment::where('status', 'completed')->count(),
-                'cancelled' => Appointment::where('status', 'cancelled')->count(),
-            ],
+            'total_doctors' => Doctor::count(),
+            'todays_appointments_list' => Appointment::whereDate('appointment_date', today())
+                ->with(['patient', 'doctor'])->get(),
         ];
 
         return view('dashboard.receptionist', compact('data'));

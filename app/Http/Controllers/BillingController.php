@@ -27,6 +27,9 @@ class BillingController extends Controller
         if ($request->filled('date_to')) {
             $query->whereDate('bill_date', '<=', $request->input('date_to'));
         }
+        if ($request->filled('patient_id')) {
+            $query->where('patient_id', $request->input('patient_id'));
+        }
 
         $bills = $query->orderByDesc('bill_date')->paginate(10)->withQueryString();
 

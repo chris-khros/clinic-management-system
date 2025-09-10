@@ -22,6 +22,11 @@ class ConsultationController extends Controller
         }
 
         // Apply filters
+        if ($request->filled('patient_id')) {
+            $query->whereHas('appointment', function ($q) use ($request) {
+                $q->where('patient_id', $request->patient_id);
+            });
+        }
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
@@ -37,7 +42,7 @@ class ConsultationController extends Controller
         // Order by consultation date descending
         $query->orderBy('consultation_date', 'desc');
 
-        $consultations = $query->paginate(10);
+        $consultations = $query->paginate(10)->appends($request->query());
 
         return view('consultations.index', compact('consultations'));
     }

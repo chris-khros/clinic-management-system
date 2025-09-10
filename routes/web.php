@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ReceptionistController;
 use App\Http\Controllers\StaffController;
 use App\Http\Controllers\PatientController;
 use App\Http\Controllers\AppointmentController;
@@ -80,6 +81,20 @@ Route::middleware('auth')->group(function () {
     // Patient Quick Search
     Route::get('/search/patients', [DashboardController::class, 'searchPatients'])->name('search.patients');
     Route::get('/search/patients/advanced', [DashboardController::class, 'advancedPatientSearch'])->name('search.patients.advanced');
+
+    // Receptionist-specific routes
+    Route::middleware(['auth', 'role:receptionist'])->group(function () {
+        Route::get('/receptionist', [ReceptionistController::class, 'index'])->name('receptionist.dashboard');
+        Route::get('/receptionist/todays-appointments', [ReceptionistController::class, 'getTodaysAppointments'])->name('receptionist.todays-appointments');
+        Route::get('/receptionist/upcoming-appointments', [ReceptionistController::class, 'getUpcomingAppointments'])->name('receptionist.upcoming-appointments');
+        Route::get('/receptionist/appointment-stats', [ReceptionistController::class, 'getAppointmentStats'])->name('receptionist.appointment-stats');
+        Route::get('/receptionist/patient-stats', [ReceptionistController::class, 'getPatientStats'])->name('receptionist.patient-stats');
+        Route::get('/receptionist/billing-stats', [ReceptionistController::class, 'getBillingStats'])->name('receptionist.billing-stats');
+        Route::get('/receptionist/doctor-availability', [ReceptionistController::class, 'getDoctorAvailability'])->name('receptionist.doctor-availability');
+        Route::get('/receptionist/quick-search', [ReceptionistController::class, 'quickPatientSearch'])->name('receptionist.quick-search');
+        Route::get('/receptionist/dashboard-summary', [ReceptionistController::class, 'getDashboardSummary'])->name('receptionist.dashboard-summary');
+        Route::get('/receptionist/recent-activity', [ReceptionistController::class, 'getRecentActivity'])->name('receptionist.recent-activity');
+    });
 
 });
 

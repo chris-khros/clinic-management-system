@@ -13,15 +13,22 @@ use App\Services\CalendarService;
 
 class AppointmentController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $user = Auth::user();
 
         if ($user->role === 'doctor') {
-            $appointments = $user->doctor->appointments()->with(['patient', 'doctor'])->paginate(10);
+            $query = $user->doctor->appointments()->with(['patient', 'doctor']);
         } else {
-            $appointments = Appointment::with(['patient', 'doctor'])->paginate(10);
+            $query = Appointment::with(['patient', 'doctor']);
         }
+
+        // Filter by patient
+        if ($request->filled('patient_id')) {
+            $query->where('patient_id', $request->patient_id);
+        }
+
+        $appointments = $query->paginate(10)->appends($request->query());
 
         return view('appointments.index', compact('appointments'));
     }

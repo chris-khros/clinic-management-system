@@ -25,10 +25,10 @@
                 <div class="p-6">
                     <div class="flex items-center justify-between">
                         <div class="flex items-center">
-                            <img class="h-16 w-16 rounded-full mr-4" src="{{ $consultation->patient->photo ? asset('storage/' . $consultation->patient->photo) : 'https://ui-avatars.com/api/?name=' . urlencode($consultation->patient->first_name . ' ' . $consultation->patient->last_name) . '&color=7F9CF5&background=EBF4FF' }}" alt="Patient Photo">
+                            <img class="h-16 w-16 rounded-full mr-4" src="{{ $consultation->patient->photo ? asset('storage/' . $consultation->patient->photo) : 'https://ui-avatars.com/api/?name=' . urlencode($consultation->patient->full_name) . '&color=7F9CF5&background=EBF4FF' }}" alt="Patient Photo">
                             <div>
-                                <h3 class="text-xl font-bold">{{ $consultation->patient->first_name }} {{ $consultation->patient->last_name }}</h3>
-                                <p class="text-sm text-gray-500">Patient ID: {{ $consultation->patient->id }}</p>
+                                <h3 class="text-xl font-bold">{{ $consultation->patient->full_name }}</h3>
+                                <p class="text-sm text-gray-500">Patient ID: {{ $consultation->patient->patient_id ?? $consultation->patient->id }}</p>
                                 <p class="text-sm text-gray-500">Consultation Date: {{ $consultation->consultation_date->format('M d, Y h:i A') }}</p>
                             </div>
                         </div>
@@ -55,7 +55,7 @@
                             <div class="space-y-3">
                                 <div>
                                     <p class="text-sm text-gray-500">Age</p>
-                                    <p class="font-medium">{{ $consultation->patient->age ?? 'N/A' }} years</p>
+                                    <p class="font-medium">{{ $consultation->patient->date_of_birth ? \Carbon\Carbon::parse($consultation->patient->date_of_birth)->age : 'N/A' }} years</p>
                                 </div>
                                 <div>
                                     <p class="text-sm text-gray-500">Gender</p>

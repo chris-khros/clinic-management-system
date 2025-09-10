@@ -9,6 +9,24 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900">
+                    <!-- Patient Quick Search & Filter -->
+                    <form id="consultations-filter-form" method="GET" action="{{ route('consultations.index') }}" class="mb-6">
+                        <input type="hidden" id="consultations_patient_id" name="patient_id" value="{{ request('patient_id') }}">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-3">Patient Quick Search</h3>
+                        <div class="relative">
+                            <input type="text"
+                                   id="consultations-patient-search"
+                                   placeholder="Search patient by name, ID, phone, or email..."
+                                   class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                   autocomplete="off">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <div id="consultations-search-results" class="mt-2 bg-white border border-gray-300 rounded-lg shadow-lg hidden max-h-96 overflow-y-auto"></div>
+                    </form>
                     <div class="flex flex-wrap justify-between items-center mb-6">
                         <div>
                             <h3 class="text-2xl font-bold">All Consultations</h3>
@@ -154,4 +172,63 @@
             </div>
         </div>
     </div>
+    <script>
+        // Inline lightweight search copied from dashboard behavior
+        (function initConsultationsSearch(){
+            const input = document.getElementById('consultations-patient-search');
+            const results = document.getElementById('consultations-search-results');
+            if (!input || !results) return;
+
+            let t = null;
+            function render(items){
+                if (!items || items.length === 0){
+                    results.innerHTML = '<div class="p-4 text-gray-500 text-center">No patients found</div>';
+                } else {
+                    results.innerHTML = items.map(p => `
+                        <button type="button" data-id="${p.id}" class="w-full text-left p-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <div class="font-medium text-gray-900">${p.full_name}</div>
+                                    <div class="text-sm text-gray-500">ID: ${p.patient_id} • ${p.phone ?? ''}</div>
+                                    ${p.email ? `<div class="text-sm text-gray-500">${p.email}</div>` : ''}
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-sm text-gray-500">${p.gender ?? ''}</div>
+                                    ${p.age ? `<div class="text-sm text-gray-500">${p.age} years</div>` : ''}
+                                </div>
+                            </div>
+                        </button>
+                    `).join('');
+                }
+                results.classList.remove('hidden');
+            }
+
+            function search(q){
+                if (!q || q.trim().length < 2){ results.classList.add('hidden'); return; }
+                fetch(`/search/patients?q=${encodeURIComponent(q)}`)
+                    .then(r => r.json())
+                    .then(render)
+                    .catch(() => { results.innerHTML = '<div class="p-4 text-red-600 text-center">Search error</div>'; results.classList.remove('hidden'); });
+            }
+
+            input.addEventListener('input', function(){
+                clearTimeout(t);
+                const q = this.value;
+                t = setTimeout(() => search(q), 300);
+            });
+
+            document.addEventListener('click', function(e){
+                if (!input.contains(e.target) && !results.contains(e.target)) results.classList.add('hidden');
+            });
+            input.addEventListener('keydown', function(e){ if (e.key === 'Escape') { results.classList.add('hidden'); input.blur(); } });
+
+            // Choose patient -> set hidden filter and submit
+            results.addEventListener('click', function(e){
+                const btn = e.target.closest('button[data-id]');
+                if (!btn) return;
+                document.getElementById('consultations_patient_id').value = btn.getAttribute('data-id');
+                document.getElementById('consultations-filter-form').submit();
+            });
+        })();
+    </script>
 </x-app-layout>

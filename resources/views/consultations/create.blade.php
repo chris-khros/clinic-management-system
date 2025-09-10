@@ -10,9 +10,9 @@
             <!-- Patient Info Header -->
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
                 <div class="p-6 flex items-center">
-                    <img class="h-16 w-16 rounded-full mr-4" src="{{ $appointment->patient->photo ? asset('storage/' . $appointment->patient->photo) : 'https://ui-avatars.com/api/?name=' . urlencode($appointment->patient->first_name . ' ' . $appointment->patient->last_name) . '&color=7F9CF5&background=EBF4FF' }}" alt="Patient Photo">
+                    <img class="h-16 w-16 rounded-full mr-4" src="{{ $appointment->patient->photo ? asset('storage/' . $appointment->patient->photo) : 'https://ui-avatars.com/api/?name=' . urlencode($appointment->patient->full_name) . '&color=7F9CF5&background=EBF4FF' }}" alt="Patient Photo">
                     <div>
-                        <h3 class="text-xl font-bold">{{ $appointment->patient->first_name }} {{ $appointment->patient->last_name }}</h3>
+                        <h3 class="text-xl font-bold">{{ $appointment->patient->full_name }}</h3>
                         <p class="text-sm text-gray-500">Appointment Date: {{ $appointment->appointment_date->format('M d, Y') }} at {{ \Carbon\Carbon::parse($appointment->appointment_time)->format('h:i A') }}</p>
                     </div>
                 </div>
@@ -47,7 +47,7 @@
                     <form action="{{ route('consultations.store') }}" method="POST" enctype="multipart/form-data" class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                         @csrf
                         <input type="hidden" name="appointment_id" value="{{ $appointment->id }}">
-                        <input type="hidden" name="doctor_id" value="{{ auth()->user()->doctor->id }}">
+                        <input type="hidden" name="doctor_id" value="{{ $appointment->doctor_id }}">
 
                         <div class="p-6 space-y-6">
                             <!-- Symptoms -->

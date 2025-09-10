@@ -143,6 +143,23 @@
                         <div class="p-6 space-y-3">
                             <h4 class="text-md font-semibold text-gray-900">Actions</h4>
 
+                            <form action="{{ route('appointments.update-status', $appointment) }}" method="POST" class="space-y-2">
+                                @csrf
+                                @method('PATCH')
+                                <label class="block text-sm text-gray-700">Change Status</label>
+                                <select name="status" id="status_select" class="w-full border rounded p-2" required>
+                                    @php($statuses = ['scheduled','confirmed','in_progress','completed','cancelled','no_show','rescheduled'])
+                                    @foreach($statuses as $s)
+                                        <option value="{{ $s }}" {{ $appointment->status === $s ? 'selected' : '' }}>{{ ucfirst(str_replace('_',' ', $s)) }}</option>
+                                    @endforeach
+                                </select>
+                                <div id="cancel_reason_wrap" class="hidden">
+                                    <label class="block text-sm text-gray-700">Cancellation Reason</label>
+                                    <textarea name="cancellation_reason" rows="2" class="w-full border rounded p-2" placeholder="Enter reason"></textarea>
+                                </div>
+                                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded">Update Status</button>
+                            </form>
+
                             @if($appointment->status === 'scheduled')
                                 <form action="{{ route('appointments.confirm', $appointment) }}" method="POST">
                                     @csrf
@@ -151,13 +168,6 @@
                                 </form>
                             @endif
 
-                            @if(!in_array($appointment->status, ['cancelled','completed']))
-                                <form action="{{ route('appointments.complete', $appointment) }}" method="POST">
-                                    @csrf
-                                    @method('PATCH')
-                                    <button type="submit" class="w-full bg-gray-700 hover:bg-gray-800 text-white font-medium py-2 px-4 rounded">Mark as Completed</button>
-                                </form>
-                            @endif
 
                             @if($appointment->status !== 'cancelled')
                                 <form action="{{ route('appointments.cancel', $appointment) }}" method="POST" onsubmit="return confirm('Cancel this appointment?');" class="space-y-2">
@@ -174,6 +184,20 @@
             </div>
         </div>
     </div>
+    <script>
+        (function(){
+            const select = document.getElementById('status_select');
+            const wrap = document.getElementById('cancel_reason_wrap');
+            function toggleReason(){
+                if (!select) return;
+                wrap.classList.toggle('hidden', select.value !== 'cancelled');
+            }
+            if (select && wrap) {
+                select.addEventListener('change', toggleReason);
+                toggleReason();
+            }
+        })();
+    </script>
 </x-app-layout>
 
 

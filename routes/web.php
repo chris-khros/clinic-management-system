@@ -11,10 +11,14 @@ use App\Http\Controllers\BillingController;
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\OtpController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
 
 
 Route::get('/', function () {
-    return redirect()->route('dashboard');
+    if (Auth::check()) {
+        return redirect()->route('dashboard');
+    }
+    return redirect()->route('login');
 });
 
 Route::get('/dashboard', [DashboardController::class, 'index'])
@@ -26,6 +30,15 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    // Dashboard by role
+    Route::middleware(['auth', 'verified'])->group(function () {
+        Route::get('/dashboard/admin', [DashboardController::class, 'adminDashboard'])->name('dashboard.admin');
+        Route::get('/dashboard/doctor', [DashboardController::class, 'doctorDashboard'])->name('dashboard.doctor');
+        Route::get('/dashboard/receptionist', [DashboardController::class, 'receptionistDashboard'])->name('dashboard.receptionist');
+        Route::get('/dashboard/nurse', [DashboardController::class, 'nurseDashboard'])->name('dashboard.nurse');
+        Route::get('/dashboard/pharmacist', [DashboardController::class, 'pharmacistDashboard'])->name('dashboard.pharmacist');
+    });
 
     // Staff Management
     Route::resource('staff', StaffController::class);
@@ -46,6 +59,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/appointments/lock', [AppointmentController::class, 'lock'])->name('appointments.lock');
     Route::post('/appointments/unlock', [AppointmentController::class, 'unlock'])->name('appointments.unlock');
     Route::resource('appointments', AppointmentController::class);
+    Route::patch('/appointments/{appointment}/status', [AppointmentController::class, 'updateStatus'])->name('appointments.update-status');
     Route::post('/appointments/{appointment}/google-calendar', [AppointmentController::class, 'addEventToGoogleCalendar'])->name('appointments.google-calendar');
     Route::patch('/appointments/{appointment}/confirm', [AppointmentController::class, 'confirm'])->name('appointments.confirm');
     Route::patch('/appointments/{appointment}/cancel', [AppointmentController::class, 'cancel'])->name('appointments.cancel');

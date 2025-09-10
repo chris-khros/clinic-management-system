@@ -36,7 +36,7 @@ class DashboardController extends Controller
         }
     }
 
-    private function adminDashboard()
+    public function adminDashboard()
     {
         $data = [
             'total_staff' => Staff::count(),
@@ -52,7 +52,7 @@ class DashboardController extends Controller
         return view('dashboard.admin', compact('data'));
     }
 
-    private function doctorDashboard()
+    public function doctorDashboard()
     {
         $doctor = Auth::user()->doctor;
 
@@ -71,7 +71,7 @@ class DashboardController extends Controller
         return view('dashboard.doctor', compact('data'));
     }
 
-    private function receptionistDashboard()
+    public function receptionistDashboard()
     {
         $data = [
             'today_appointments' => Appointment::whereDate('appointment_date', today())->count(),
@@ -85,7 +85,7 @@ class DashboardController extends Controller
         return view('dashboard.receptionist', compact('data'));
     }
 
-    private function nurseDashboard()
+    public function nurseDashboard()
     {
         $data = [
             'today_appointments' => Appointment::whereDate('appointment_date', today())->count(),
@@ -96,7 +96,7 @@ class DashboardController extends Controller
         return view('dashboard.nurse', compact('data'));
     }
 
-    private function pharmacistDashboard()
+    public function pharmacistDashboard()
     {
         $data = [
             'total_patients' => Patient::count(),

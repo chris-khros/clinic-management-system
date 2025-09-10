@@ -241,6 +241,30 @@ class AppointmentController extends Controller
         return redirect()->route('appointments.show', $appointment)->with('success', 'Appointment marked as completed.');
     }
 
+    public function updateStatus(Request $request, Appointment $appointment)
+    {
+        $request->validate([
+            'status' => 'required|string|in:scheduled,confirmed,in_progress,completed,cancelled,no_show,rescheduled',
+            'cancellation_reason' => 'nullable|string'
+        ]);
+
+        $newStatus = $request->string('status');
+
+        $updates = ['status' => $newStatus];
+
+        if ($newStatus === 'confirmed') {
+            $updates['confirmed_at'] = now();
+        }
+        if ($newStatus === 'cancelled') {
+            $updates['cancelled_at'] = now();
+            $updates['cancellation_reason'] = $request->input('cancellation_reason', $appointment->cancellation_reason);
+        }
+
+        $appointment->update($updates);
+
+        return back()->with('success', 'Appointment status updated to ' . str_replace('_', ' ', $newStatus) . '.');
+    }
+
     public function calendar()
     {
         $user = Auth::user();

@@ -37,12 +37,12 @@ class StaffController extends Controller
             'photo' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
 
-        // Create user account
+        // ✅ Create linked user account with role
         $user = User::create([
             'name' => $request->full_name,
             'email' => $request->email,
             'password' => Hash::make('password123'), // Default password
-            'role' => $request->role,
+            'role' => $request->role,               // Ensure role is always set
             'is_active' => true,
         ]);
 
@@ -98,7 +98,7 @@ class StaffController extends Controller
             'photo' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
 
-        // Update user account
+        // ✅ Update linked user account with role + email
         $staff->user->update([
             'name' => $request->full_name,
             'email' => $request->email,

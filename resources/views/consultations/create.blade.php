@@ -91,50 +91,19 @@
                             <!-- E-Prescriptions and Reports -->
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">Upload E-Prescriptions and Reports</label>
-                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
-                                    <!-- Prescriptions Card -->
-                                    <div class="rounded-lg border-2 border-dashed border-gray-300 hover:border-indigo-400 transition bg-gray-50">
-                                        <label for="prescription_files" class="cursor-pointer block p-4 text-center">
+                                <div class="mt-2">
+                                    <div id="documents_drop" class="rounded-lg border-2 border-dashed border-gray-300 hover:border-indigo-400 transition bg-gray-50">
+                                        <label for="documents" class="cursor-pointer block p-6 text-center">
                                             <svg class="mx-auto h-8 w-8 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48"><path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
                                             <div class="mt-2 text-sm">
-                                                <span class="font-medium text-gray-800">Prescriptions</span>
-                                                <span class="block text-gray-500">Click to choose or drop files</span>
+                                                <span class="font-medium text-gray-800">Choose or drop files</span>
+                                                <span class="block text-gray-500">PDF, JPG, PNG up to 10MB each</span>
                                             </div>
-                                            <span class="mt-1 block text-xs text-gray-400">PDF, JPG, PNG up to 10MB</span>
                                         </label>
-                                        <input id="prescription_files" type="file" name="prescription_files[]" multiple accept=".pdf,.jpg,.jpeg,.png" class="hidden">
-                                        <ul id="prescription_list" class="px-4 pb-3 text-xs text-gray-600 space-y-1"></ul>
-                                    </div>
-
-                                    <!-- Lab Results Card -->
-                                    <div class="rounded-lg border-2 border-dashed border-gray-300 hover:border-indigo-400 transition bg-gray-50">
-                                        <label for="lab_files" class="cursor-pointer block p-4 text-center">
-                                            <svg class="mx-auto h-8 w-8 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48"><path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
-                                            <div class="mt-2 text-sm">
-                                                <span class="font-medium text-gray-800">Lab Results</span>
-                                                <span class="block text-gray-500">Click to choose or drop files</span>
-                                            </div>
-                                            <span class="mt-1 block text-xs text-gray-400">PDF, JPG, PNG up to 10MB</span>
-                                        </label>
-                                        <input id="lab_files" type="file" name="lab_files[]" multiple accept=".pdf,.jpg,.jpeg,.png" class="hidden">
-                                        <ul id="lab_list" class="px-4 pb-3 text-xs text-gray-600 space-y-1"></ul>
-                                    </div>
-
-                                    <!-- Other Reports Card -->
-                                    <div class="rounded-lg border-2 border-dashed border-gray-300 hover:border-indigo-400 transition bg-gray-50">
-                                        <label for="other_files" class="cursor-pointer block p-4 text-center">
-                                            <svg class="mx-auto h-8 w-8 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48"><path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
-                                            <div class="mt-2 text-sm">
-                                                <span class="font-medium text-gray-800">Other Reports</span>
-                                                <span class="block text-gray-500">Click to choose or drop files</span>
-                                            </div>
-                                            <span class="mt-1 block text-xs text-gray-400">PDF, JPG, PNG up to 10MB</span>
-                                        </label>
-                                        <input id="other_files" type="file" name="other_files[]" multiple accept=".pdf,.jpg,.jpeg,.png" class="hidden">
-                                        <ul id="other_list" class="px-4 pb-3 text-xs text-gray-600 space-y-1"></ul>
+                                        <input id="documents" type="file" name="documents[]" multiple accept=".pdf,.jpg,.jpeg,.png" class="hidden">
+                                        <ul id="documents_list" class="px-4 pb-3 text-xs text-gray-600 space-y-1"></ul>
                                     </div>
                                 </div>
-                                <p class="mt-2 text-xs text-gray-500">PDF, JPG, PNG up to 10MB each</p>
                             </div>
                         </div>
 
@@ -160,9 +129,31 @@
                                 });
                             }
 
-                            bindPreview('prescription_files', 'prescription_list');
-                            bindPreview('lab_files', 'lab_list');
-                            bindPreview('other_files', 'other_list');
+                            bindPreview('documents', 'documents_list');
+
+                            function bindDrop(dropId, inputId) {
+                                var drop = document.getElementById(dropId);
+                                var input = document.getElementById(inputId);
+                                if (!drop || !input) return;
+                                ;['dragenter','dragover'].forEach(function(evt){
+                                    drop.addEventListener(evt, function(e){ e.preventDefault(); drop.classList.add('border-indigo-400','bg-indigo-50'); });
+                                });
+                                ;['dragleave','drop'].forEach(function(evt){
+                                    drop.addEventListener(evt, function(e){ e.preventDefault(); drop.classList.remove('border-indigo-400','bg-indigo-50'); });
+                                });
+                                drop.addEventListener('drop', function(e){
+                                    e.preventDefault();
+                                    if (!e.dataTransfer || !e.dataTransfer.files) return;
+                                    // Merge newly dropped files with existing FileList using DataTransfer
+                                    var dt = new DataTransfer();
+                                    Array.from(input.files).forEach(function(f){ dt.items.add(f); });
+                                    Array.from(e.dataTransfer.files).forEach(function(f){ dt.items.add(f); });
+                                    input.files = dt.files;
+                                    input.dispatchEvent(new Event('change'));
+                                });
+                            }
+
+                            bindDrop('documents_drop', 'documents');
                         })();
                     </script>
                 </div>

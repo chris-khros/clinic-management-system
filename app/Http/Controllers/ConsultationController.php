@@ -88,6 +88,8 @@ class ConsultationController extends Controller
             'prescription_files.*' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
             'lab_files.*' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
             'other_files.*' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
+            // simplified single uploader support
+            'documents.*' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
         ]);
 
         $appointment = Appointment::find($request->appointment_id);
@@ -160,6 +162,13 @@ class ConsultationController extends Controller
         // Handle other medical report files
         if ($request->hasFile('other_files')) {
             foreach ($request->file('other_files') as $file) {
+                $this->storeMedicalRecord($consultation, $file, 'medical_report', $uploadPath);
+            }
+        }
+
+        // Handle simplified single uploader (documents[] -> medical_report)
+        if ($request->hasFile('documents')) {
+            foreach ($request->file('documents') as $file) {
                 $this->storeMedicalRecord($consultation, $file, 'medical_report', $uploadPath);
             }
         }

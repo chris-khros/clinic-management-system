@@ -13,26 +13,57 @@
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900">
                     <div class="flex flex-wrap gap-4 items-end mb-4">
+                        @if(auth()->user()->role !== 'doctor')
                         <div>
                             <label for="doctor_id" class="block text-sm font-medium mb-1">Doctor</label>
                             <select id="doctor_id" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
                                 @foreach(\App\Models\Doctor::where('is_active', true)->get() as $doc)
-                                    <option value="{{ $doc->id }}">{{ $doc->user->name ?? ('Doctor #'.$doc->id) }}</option>
+                                    <option value="{{ $doc->id }}">
+                                        {{ $doc->user->name ?? ('Doctor #'.$doc->id) }}
+                                    </option>
                                 @endforeach
                             </select>
                         </div>
-                        <div class="ml-auto flex items-center gap-4">
-                             <div class="flex items-center gap-2">
+                        @else
+                        <div class="hidden">
+                            <select id="doctor_id">
+                                <option value="{{ auth()->user()->doctor->id }}" selected>
+                                    {{ auth()->user()->doctor->user->name ?? ('Doctor #'.auth()->user()->doctor->id) }}
+                                </option>
+                            </select>
+                        </div>
+                        @endif
+                        <div class="ml-auto flex flex-wrap items-center gap-4">
+                            <!-- Appointment Status Legend -->
+                            <div class="flex items-center gap-2">
                                 <span class="w-4 h-4 rounded-full bg-blue-500"></span>
-                                <span class="text-sm">Booked</span>
+                                <span class="text-sm">Scheduled</span>
                             </div>
-                             <div class="flex items-center gap-2">
+                            <div class="flex items-center gap-2">
+                                <span class="w-4 h-4 rounded-full bg-green-500"></span>
+                                <span class="text-sm">Confirmed</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="w-4 h-4 rounded-full bg-amber-500"></span>
+                                <span class="text-sm">In Progress</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="w-4 h-4 rounded-full bg-gray-500"></span>
+                                <span class="text-sm">Completed</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="w-4 h-4 rounded-full bg-red-500"></span>
+                                <span class="text-sm">No Show</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="w-4 h-4 rounded-full bg-gray-300"></span>
+                                <span class="text-sm">Cancelled</span>
+                            </div>
+
+                            <!-- Locked slots -->
+                            <div class="flex items-center gap-2">
                                 <span class="w-4 h-4 rounded-full bg-yellow-400"></span>
                                 <span class="text-sm">Locked</span>
-                            </div>
-                             <div class="flex items-center gap-2">
-                                <span class="w-4 h-4 rounded-full bg-green-500"></span>
-                                <span class="text-sm">Available</span>
                             </div>
                         </div>
                     </div>
@@ -120,10 +151,15 @@
                         loadPatients();
                     },
                     eventClick: function(info) {
-                        if(confirm("Do you want to cancel this appointment?")) {
-                            // Here you would add logic to cancel the appointment
-                            alert('Appointment for ' + info.event.title + ' cancelled.');
-                            info.event.remove();
+                        const status = info.event.extendedProps?.status || 'unknown';
+                        const patient = info.event.extendedProps?.patient;
+                        const patientInfo = patient ? `${patient.full_name}\nPhone: ${patient.phone}\nEmail: ${patient.email}` : 'No patient info';
+
+                        const message = `Appointment Details:\n\nPatient: ${patientInfo}\nStatus: ${status.replace('_', ' ').toUpperCase()}\nTime: ${info.event.start.toLocaleString()}\n\nDo you want to manage this appointment?`;
+
+                        if(confirm(message)) {
+                            // Here you could add logic to edit/manage the appointment
+                            alert('Appointment management feature would open here.');
                         }
                     }
                 });
@@ -132,31 +168,67 @@
 
             function fetchEvents(fetchInfo, successCallback, failureCallback) {
                 const doctorId = doctorEl.value;
-                const date = new Date(fetchInfo.start).toISOString().slice(0, 10);
+                const startDate = new Date(fetchInfo.start).toISOString().slice(0, 10);
+                const endDate = new Date(fetchInfo.end).toISOString().slice(0, 10);
 
-                fetch(`{{ route('appointments.doctor-schedule') }}?doctor_id=${doctorId}&date=${date}`)
-                    .then(response => response.json())
+                fetch(`{{ route('appointments.doctor-schedule') }}?doctor_id=${doctorId}&date=${startDate}&end_date=${endDate}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
                     .then(data => {
                         const events = [];
-                        data.appointments.forEach(app => {
-                            events.push({
-                                title: app.patient ? `${app.patient.first_name} ${app.patient.last_name}` : 'Booked',
-                                start: `${app.appointment_date}T${app.appointment_time}`,
-                                backgroundColor: '#3B82F6', // blue-500
-                                borderColor: '#3B82F6'
+
+                        if (data.appointments && Array.isArray(data.appointments)) {
+                            data.appointments.forEach(app => {
+                                const startDateTime = `${app.appointment_date}T${app.appointment_time}`;
+
+                                // Color coding based on appointment status
+                                const statusColors = {
+                                    'scheduled': { bg: '#3B82F6', border: '#3B82F6' },    // Blue
+                                    'confirmed': { bg: '#10B981', border: '#10B981' },    // Green
+                                    'in_progress': { bg: '#F59E0B', border: '#F59E0B' },  // Amber
+                                    'completed': { bg: '#6B7280', border: '#6B7280' },    // Gray
+                                    'no_show': { bg: '#EF4444', border: '#EF4444' },      // Red
+                                    'cancelled': { bg: '#9CA3AF', border: '#9CA3AF' }     // Light Gray
+                                };
+
+                                const colors = statusColors[app.status] || statusColors['scheduled'];
+
+                                events.push({
+                                    title: app.patient ? `${app.patient.full_name} (${app.status.replace('_', ' ')})` : `Booked (${app.status.replace('_', ' ')})`,
+                                    start: startDateTime,
+                                    backgroundColor: colors.bg,
+                                    borderColor: colors.border,
+                                    extendedProps: {
+                                        status: app.status,
+                                        patient: app.patient
+                                    }
+                                });
                             });
-                        });
-                        data.locks.forEach(lock => {
-                            events.push({
-                                title: 'Locked',
-                                start: `${lock.appointment_date}T${lock.appointment_time}`,
-                                backgroundColor: '#FBBF24', // yellow-400
-                                borderColor: '#FBBF24'
+                        }
+
+                        if (data.locks && Array.isArray(data.locks)) {
+                            data.locks.forEach(lock => {
+                                const startDateTime = `${lock.appointment_date}T${lock.appointment_time}`;
+
+                                events.push({
+                                    title: 'Locked',
+                                    start: startDateTime,
+                                    backgroundColor: '#FBBF24', // yellow-400
+                                    borderColor: '#FBBF24'
+                                });
                             });
-                        });
+                        }
+
                         successCallback(events);
                     })
-                    .catch(error => failureCallback(error));
+                    .catch(error => {
+                        console.error('Error fetching events:', error);
+                        failureCallback(error);
+                    });
             }
 
             async function loadPatients() {
@@ -167,7 +239,7 @@
                     patients.forEach(patient => {
                         const option = document.createElement('option');
                         option.value = patient.id;
-                        option.textContent = `${patient.first_name} ${patient.last_name} (${patient.email})`;
+                        option.textContent = `${patient.full_name} (${patient.email})`;
                         patientSelect.appendChild(option);
                     });
                 } catch (error) {

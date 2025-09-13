@@ -290,21 +290,45 @@ class AppointmentController extends Controller
         $request->validate([
             'doctor_id' => 'required|exists:doctors,id',
             'date' => 'required|date',
+            'end_date' => 'nullable|date',
         ]);
 
+        $startDate = $request->date;
+        $endDate = $request->end_date ?? $request->date;
+
         $appointments = Appointment::where('doctor_id', $request->doctor_id)
-            ->where('appointment_date', $request->date)
+            ->whereBetween('appointment_date', [$startDate, $endDate])
             ->where('status', '!=', 'cancelled')
-            ->get(['appointment_time']);
+            ->with('patient')
+            ->get(['appointment_time', 'appointment_date', 'patient_id', 'status']);
 
         $locks = AppointmentLock::where('doctor_id', $request->doctor_id)
-            ->where('appointment_date', $request->date)
+            ->whereBetween('appointment_date', [$startDate, $endDate])
             ->where('locked_until', '>', now())
-            ->get(['appointment_time', 'locked_until']);
+            ->get(['appointment_time', 'locked_until', 'appointment_date']);
+
+        // Format the data properly for the calendar
+        $formattedAppointments = $appointments->map(function ($appointment) {
+            return [
+                'appointment_time' => $appointment->appointment_time,
+                'appointment_date' => $appointment->appointment_date->format('Y-m-d'), // Format as date string
+                'patient_id' => $appointment->patient_id,
+                'status' => $appointment->status,
+                'patient' => $appointment->patient
+            ];
+        });
+
+        $formattedLocks = $locks->map(function ($lock) {
+            return [
+                'appointment_time' => $lock->appointment_time,
+                'appointment_date' => $lock->appointment_date->format('Y-m-d'), // Format as date string
+                'locked_until' => $lock->locked_until
+            ];
+        });
 
         return response()->json([
-            'appointments' => $appointments,
-            'locks' => $locks,
+            'appointments' => $formattedAppointments,
+            'locks' => $formattedLocks,
         ]);
     }
 

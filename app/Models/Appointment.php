@@ -26,7 +26,7 @@ class Appointment extends Model
 
     protected $casts = [
         'appointment_date' => 'date',
-        'appointment_time' => 'datetime',
+        'appointment_time' => 'string',
         'confirmed_at' => 'datetime',
         'cancelled_at' => 'datetime',
     ];

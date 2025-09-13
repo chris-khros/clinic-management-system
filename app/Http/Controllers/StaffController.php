@@ -84,52 +84,61 @@ class StaffController extends Controller
         return view('staff.edit', compact('staff', 'roles'));
     }
 
-    public function update(Request $request, Staff $staff)
-    {
-        $request->validate([
-            'full_name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email,' . $staff->user_id,
-            'phone' => 'required|string|max:20',
-            'role' => 'required|in:admin,doctor,nurse,receptionist,pharmacist',
-            'department' => 'required|string|max:255',
-            'position' => 'required|string|max:255',
-            'qualifications' => 'nullable|string',
-            'hire_date' => 'required|date',
-            'photo' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-        ]);
+public function update(Request $request, Staff $staff)
+{
+    $request->validate([
+        'full_name' => 'required|string|max:255',
+        'email' => 'required|string|email|max:255|unique:users,email,' . $staff->user_id,
+        'phone' => 'required|string|max:20',
+        'role' => 'required|in:admin,doctor,nurse,receptionist,pharmacist',
+        'department' => 'required|string|max:255',
+        'position' => 'required|string|max:255',
+        'qualifications' => 'nullable|string',
+        'hire_date' => 'required|date',
+        'photo' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+    ]);
 
-        // ✅ Update linked user account with role + email
-        $staff->user->update([
-            'name' => $request->full_name,
-            'email' => $request->email,
-            'role' => $request->role,
-        ]);
+    // ✅ Update linked user account
+    $staff->user->update([
+        'name' => $request->full_name,
+        'email' => $request->email,
+        'role' => $request->role,
+    ]);
 
-        // Handle photo upload
-        $photoPath = $staff->photo;
-        if ($request->hasFile('photo')) {
-            // Delete old photo
-            if ($photoPath && Storage::disk('public')->exists($photoPath)) {
-                Storage::disk('public')->delete($photoPath);
-            }
-            $photoPath = $request->file('photo')->store('staff-photos', 'public');
+    $photoPath = $staff->photo;
+
+    // ✅ If user checked "Remove Photo"
+    if ($request->has('remove_photo') && $request->remove_photo == 1) {
+        if ($photoPath && Storage::disk('public')->exists($photoPath)) {
+            Storage::disk('public')->delete($photoPath);
         }
-
-        // Update staff profile
-        $staff->update([
-            'full_name' => $request->full_name,
-            'photo' => $photoPath,
-            'phone' => $request->phone,
-            'email' => $request->email,
-            'qualifications' => $request->qualifications,
-            'department' => $request->department,
-            'position' => $request->position,
-            'role' => $request->role,
-            'hire_date' => $request->hire_date,
-        ]);
-
-        return redirect()->route('staff.index')->with('success', 'Staff member updated successfully.');
+        $photoPath = null;
     }
+
+    // ✅ Handle new photo upload
+    if ($request->hasFile('photo')) {
+        if ($photoPath && Storage::disk('public')->exists($photoPath)) {
+            Storage::disk('public')->delete($photoPath);
+        }
+        $photoPath = $request->file('photo')->store('staff-photos', 'public');
+    }
+
+    // ✅ Update staff profile
+    $staff->update([
+        'full_name' => $request->full_name,
+        'photo' => $photoPath,
+        'phone' => $request->phone,
+        'email' => $request->email,
+        'qualifications' => $request->qualifications,
+        'department' => $request->department,
+        'position' => $request->position,
+        'role' => $request->role,
+        'hire_date' => $request->hire_date,
+    ]);
+
+    return redirect()->route('staff.index')->with('success', 'Staff member updated successfully.');
+}
+
 
     public function destroy(Staff $staff)
     {

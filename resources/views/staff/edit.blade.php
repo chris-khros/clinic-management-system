@@ -13,8 +13,8 @@
                     <!-- Photo Preview -->
                     <div class="mb-6 flex items-center space-x-6">
                         @if(!empty($staff->photo))
-                            <img src="{{ asset('storage/'.$staff->photo) }}" 
-                                 alt="Staff Photo" 
+                            <img src="{{ asset('storage/'.$staff->photo) }}"
+                                 alt="Staff Photo"
                                  class="w-28 h-28 rounded-full object-cover border shadow">
                         @else
                             <div class="w-28 h-28 rounded-full bg-gray-100 flex items-center justify-center text-gray-400">
@@ -26,27 +26,36 @@
                             <label class="block text-sm font-medium text-gray-700">Upload New Photo</label>
                             <input type="file" name="photo" class="mt-2 block w-full text-sm text-gray-700 border rounded p-1">
                             <p class="text-xs text-gray-500 mt-1">Allowed: JPG, PNG (Max 2MB)</p>
+
+                            @if(!empty($staff->photo))
+                                <div class="mt-3">
+                                    <label class="inline-flex items-center">
+                                        <input type="checkbox" name="remove_photo" value="1" class="rounded border-gray-300 text-red-600 shadow-sm focus:ring-red-500">
+                                        <span class="ml-2 text-sm text-gray-700">Remove Current Photo</span>
+                                    </label>
+                                </div>
+                            @endif
                         </div>
                     </div>
 
                     <!-- Full Name -->
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-700">Full Name</label>
-                        <input type="text" name="full_name" value="{{ old('full_name', $staff->full_name) }}" 
+                        <input type="text" name="full_name" value="{{ old('full_name', $staff->full_name) }}"
                                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required>
                     </div>
 
                     <!-- Email -->
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-700">Email</label>
-                        <input type="email" name="email" value="{{ old('email', $staff->email) }}" 
+                        <input type="email" name="email" value="{{ old('email', $staff->email) }}"
                                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required>
                     </div>
 
                     <!-- Phone -->
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-700">Phone</label>
-                        <input type="text" name="phone" value="{{ old('phone', $staff->phone) }}" 
+                        <input type="text" name="phone" value="{{ old('phone', $staff->phone) }}"
                                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required>
                     </div>
 
@@ -65,14 +74,14 @@
                     <!-- Department -->
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-700">Department</label>
-                        <input type="text" name="department" value="{{ old('department', $staff->department) }}" 
+                        <input type="text" name="department" value="{{ old('department', $staff->department) }}"
                                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required>
                     </div>
 
                     <!-- Position -->
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-700">Position</label>
-                        <input type="text" name="position" value="{{ old('position', $staff->position) }}" 
+                        <input type="text" name="position" value="{{ old('position', $staff->position) }}"
                                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required>
                     </div>
 
@@ -85,7 +94,7 @@
                     <!-- Hire Date -->
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-700">Hire Date</label>
-                        <input type="date" name="hire_date" value="{{ old('hire_date', $staff->hire_date ? $staff->hire_date->format('Y-m-d') : '') }}" 
+                        <input type="date" name="hire_date" value="{{ old('hire_date', $staff->hire_date ? $staff->hire_date->format('Y-m-d') : '') }}"
                                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required>
                     </div>
 

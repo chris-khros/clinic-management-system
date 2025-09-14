@@ -1,109 +1,96 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">{{ __('Edit Staff') }}</h2>
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+            Edit Staff Information
+        </h2>
     </x-slot>
 
-    <div class="py-6">
-        <div class="max-w-3xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white shadow sm:rounded-lg p-6">
-                <form method="POST" action="{{ route('staff.update', $staff->id) }}" enctype="multipart/form-data">
-                    @csrf
-                    @method('PUT')
+    <div class="py-12">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                <div class="p-6 text-gray-900">
 
-                    <!-- Photo Preview -->
-                    <div class="mb-6 flex items-center space-x-6">
-                        @if(!empty($staff->photo))
-                            <img src="{{ asset('storage/'.$staff->photo) }}"
-                                 alt="Staff Photo"
-                                 class="w-28 h-28 rounded-full object-cover border shadow">
-                        @else
-                            <div class="w-28 h-28 rounded-full bg-gray-100 flex items-center justify-center text-gray-400">
-                                No Photo
-                            </div>
-                        @endif
+                    <form action="{{ route('staff.update', $staff->id) }}" method="POST" enctype="multipart/form-data">
+                        @csrf
+                        @method('PUT')
 
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">Upload New Photo</label>
-                            <input type="file" name="photo" class="mt-2 block w-full text-sm text-gray-700 border rounded p-1">
-                            <p class="text-xs text-gray-500 mt-1">Allowed: JPG, PNG (Max 2MB)</p>
+                        {{-- Full Name --}}
+                        <div class="mb-4">
+                            <label class="block font-medium">Full Name</label>
+                            <input type="text" name="full_name" class="w-full border rounded p-2"
+                                   value="{{ old('full_name', $staff->full_name) }}" required>
+                        </div>
 
-                            @if(!empty($staff->photo))
-                                <div class="mt-3">
-                                    <label class="inline-flex items-center">
-                                        <input type="checkbox" name="remove_photo" value="1" class="rounded border-gray-300 text-red-600 shadow-sm focus:ring-red-500">
-                                        <span class="ml-2 text-sm text-gray-700">Remove Current Photo</span>
-                                    </label>
-                                </div>
+                        {{-- Email --}}
+                        <div class="mb-4">
+                            <label class="block font-medium">Email</label>
+                            <input type="email" name="email" class="w-full border rounded p-2"
+                                   value="{{ old('email', $staff->email) }}" required>
+                        </div>
+
+                        {{-- Phone --}}
+                        <div class="mb-4">
+                            <label class="block font-medium">Phone</label>
+                            <input type="text" name="phone" class="w-full border rounded p-2"
+                                   value="{{ old('phone', $staff->phone) }}">
+                        </div>
+
+                        {{-- Department --}}
+                        <div class="mb-4">
+                            <label class="block font-medium">Department</label>
+                            <input type="text" name="department" class="w-full border rounded p-2"
+                                   value="{{ old('department', $staff->department) }}">
+                        </div>
+
+                        {{-- Position --}}
+                        <div class="mb-4">
+                            <label class="block font-medium">Position</label>
+                            <input type="text" name="position" class="w-full border rounded p-2"
+                                   value="{{ old('position', $staff->position) }}">
+                        </div>
+
+                        {{-- Role --}}
+                        <div class="mb-4">
+                            <label class="block font-medium">Role</label>
+                            <select name="role" class="w-full border rounded p-2">
+                                <option value="admin" {{ $staff->role == 'admin' ? 'selected' : '' }}>Admin</option>
+                                <option value="doctor" {{ $staff->role == 'doctor' ? 'selected' : '' }}>Doctor</option>
+                                <option value="nurse" {{ $staff->role == 'nurse' ? 'selected' : '' }}>Nurse</option>
+                                <option value="receptionist" {{ $staff->role == 'receptionist' ? 'selected' : '' }}>Receptionist</option>
+                                <option value="pharmacist" {{ $staff->role == 'pharmacist' ? 'selected' : '' }}>Pharmacist</option>
+                            </select>
+                        </div>
+
+                        {{-- Hire Date --}}
+                        <div class="mb-4">
+                            <label class="block font-medium">Hire Date</label>
+                            <input type="date" name="hire_date" class="w-full border rounded p-2"
+                                   value="{{ old('hire_date', $staff->hire_date ? $staff->hire_date->format('Y-m-d') : '') }}">
+                        </div>
+
+                        {{-- Photo (optional) --}}
+                        <div class="mb-4">
+                            <label class="block font-medium">Photo</label>
+                            <input type="file" name="photo" class="w-full border rounded p-2">
+                            @if($staff->photo)
+                                <img src="{{ asset('storage/' . $staff->photo) }}" alt="Staff Photo" class="h-20 mt-2">
                             @endif
                         </div>
-                    </div>
 
-                    <!-- Full Name -->
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700">Full Name</label>
-                        <input type="text" name="full_name" value="{{ old('full_name', $staff->full_name) }}"
-                               class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required>
-                    </div>
+                        {{-- Is Active --}}
+                        <div class="mb-4">
+                            <label class="inline-flex items-center">
+                                <input type="checkbox" name="is_active" value="1" {{ $staff->is_active ? 'checked' : '' }}>
+                                <span class="ml-2">Active</span>
+                            </label>
+                        </div>
 
-                    <!-- Email -->
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700">Email</label>
-                        <input type="email" name="email" value="{{ old('email', $staff->email) }}"
-                               class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required>
-                    </div>
+                        <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">
+                            Update Staff
+                        </button>
+                    </form>
 
-                    <!-- Phone -->
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700">Phone</label>
-                        <input type="text" name="phone" value="{{ old('phone', $staff->phone) }}"
-                               class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required>
-                    </div>
-
-                    <!-- Role -->
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700">Role</label>
-                        <select name="role" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required>
-                            @foreach($roles as $role)
-                                <option value="{{ $role }}" {{ $staff->role == $role ? 'selected' : '' }}>
-                                    {{ ucfirst($role) }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <!-- Department -->
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700">Department</label>
-                        <input type="text" name="department" value="{{ old('department', $staff->department) }}"
-                               class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required>
-                    </div>
-
-                    <!-- Position -->
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700">Position</label>
-                        <input type="text" name="position" value="{{ old('position', $staff->position) }}"
-                               class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required>
-                    </div>
-
-                    <!-- Qualifications -->
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700">Qualifications</label>
-                        <textarea name="qualifications" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">{{ old('qualifications', $staff->qualifications) }}</textarea>
-                    </div>
-
-                    <!-- Hire Date -->
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700">Hire Date</label>
-                        <input type="date" name="hire_date" value="{{ old('hire_date', $staff->hire_date ? $staff->hire_date->format('Y-m-d') : '') }}"
-                               class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required>
-                    </div>
-
-                    <!-- Buttons -->
-                    <div class="flex justify-end space-x-3">
-                        <a href="{{ route('staff.index') }}" class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600">Cancel</a>
-                        <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Update</button>
-                    </div>
-                </form>
+                </div>
             </div>
         </div>
     </div>
